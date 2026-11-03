@@ -1,0 +1,29 @@
+# Virtual environments
+venv/
+env/
+ENV/
+**/venv/
+
+# Python cache & compiled files
+__pycache__/
+**/__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Sensitive credentials (prevents secret revocation by GitHub / Meta)
+.env
+**/.env
+
+# Local SQLite databases & logs
+*.db
+*.db-wal
+*.db-shm
+**/shop_bridge.db*
+test_advanced.py
+
+# Editor / OS files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

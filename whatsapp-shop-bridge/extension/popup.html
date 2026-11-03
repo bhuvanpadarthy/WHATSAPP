@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WhatsApp Price Sync Settings</title>
+  <style>
+    :root {
+      --bg: #111b21;
+      --card-bg: #1f2c34;
+      --text: #e9edef;
+      --text-muted: #8696a0;
+      --green: #00a884;
+      --green-glow: rgba(0, 168, 132, 0.3);
+      --border: #2a3942;
+      --danger: #ef4444;
+      --meta-blue: #0866ff;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    body {
+      width: 350px;
+      background: var(--bg);
+      color: var(--text);
+      padding: 16px;
+      font-size: 13px;
+    }
+
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 14px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .brand-icon {
+      width: 32px;
+      height: 32px;
+      background: linear-gradient(135deg, #25D366, #128C7E);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+    }
+
+    .brand h2 {
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .status-badge {
+      font-size: 11px;
+      padding: 3px 8px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-weight: 500;
+    }
+
+    .status-online {
+      background: rgba(0, 168, 132, 0.15);
+      color: var(--green);
+      border: 1px solid rgba(0, 168, 132, 0.4);
+    }
+
+    .status-offline {
+      background: rgba(239, 68, 68, 0.15);
+      color: var(--danger);
+      border: 1px solid rgba(239, 68, 68, 0.4);
+    }
+
+    .dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: currentColor;
+    }
+
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px;
+      margin-bottom: 12px;
+    }
+
+    .meta-status-box {
+      background: rgba(8, 102, 255, 0.12);
+      border: 1px solid rgba(8, 102, 255, 0.3);
+      border-radius: 6px;
+      padding: 8px 10px;
+      font-size: 11.5px;
+      color: #93c5fd;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+
+    .field-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-bottom: 12px;
+    }
+
+    label {
+      font-size: 11.5px;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    input[type="text"] {
+      background: #111b21;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 8px 12px;
+      color: var(--text);
+      font-size: 13px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    input[type="text"]:focus {
+      border-color: var(--green);
+    }
+
+    .toggle-container {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-top: 4px;
+    }
+
+    .toggle-title {
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .toggle-desc {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    /* Switch */
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 44px;
+      height: 24px;
+      flex-shrink: 0;
+    }
+
+    .switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background-color: #3b4a54;
+      transition: .2s;
+      border-radius: 24px;
+    }
+
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 18px;
+      width: 18px;
+      left: 3px;
+      bottom: 3px;
+      background-color: white;
+      transition: .2s;
+      border-radius: 50%;
+    }
+
+    input:checked + .slider {
+      background-color: var(--green);
+    }
+
+    input:checked + .slider:before {
+      transform: translateX(20px);
+    }
+
+    .btn {
+      width: 100%;
+      padding: 9px;
+      border-radius: 6px;
+      font-size: 12.5px;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: opacity 0.2s;
+      margin-top: 6px;
+    }
+
+    .btn-save {
+      background: var(--green);
+      color: #111b21;
+    }
+
+    .btn-save:hover {
+      opacity: 0.9;
+    }
+
+    .btn-meta {
+      background: rgba(8, 102, 255, 0.2);
+      border: 1px solid var(--meta-blue);
+      color: #70aaff;
+    }
+
+    .btn-meta:hover {
+      background: rgba(8, 102, 255, 0.3);
+    }
+
+    .footer-note {
+      text-align: center;
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 10px;
+    }
+
+    .toast-msg {
+      margin-top: 8px;
+      padding: 6px 10px;
+      border-radius: 6px;
+      font-size: 11px;
+      text-align: center;
+      background: rgba(0, 168, 132, 0.2);
+      color: #5cf7c9;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <div class="brand">
+      <div class="brand-icon">🛍️</div>
+      <div>
+        <h2>Price Sync</h2>
+      </div>
+    </div>
+    <div id="connBadge" class="status-badge status-online">
+      <span class="dot"></span>
+      <span id="connText">Checking...</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="meta-status-box" id="metaStatusPill">
+      <span>🌐 Meta WhatsApp API:</span>
+      <strong id="metaStatusText">Checking...</strong>
+    </div>
+
+    <div class="field-group">
+      <label>Destination WhatsApp Number (with country code)</label>
+      <input type="text" id="phoneInput" placeholder="919876543210" value="919876543210">
+    </div>
+
+    <div class="toggle-container">
+      <div>
+        <div class="toggle-title">"Allow All" Auto-Sync</div>
+        <div class="toggle-desc">Auto-send deals when searching on Amazon, Flipkart, Meesho, Myntra</div>
+      </div>
+      <label class="switch">
+        <input type="checkbox" id="allowAllToggle" checked>
+        <span class="slider"></span>
+      </label>
+    </div>
+
+    <button id="saveBtn" class="btn btn-save" style="margin-top: 14px;">
+      💾 Save & Enable
+    </button>
+    <div id="toast" class="toast-msg">Settings saved & synced!</div>
+  </div>
+
+  <button id="openMetaConfigBtn" class="btn btn-meta">
+    ⚙️ Meta Facebook & Storage Settings ↗
+  </button>
+
+  <button id="openRealWaBtn" class="btn btn-save" style="background: #25D366; color: #111b21;">
+    📲 Open in Real WhatsApp (Web / App) ↗
+  </button>
+
+  <div class="footer-note">
+    Active on Amazon.in, Flipkart, Meesho, Myntra
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

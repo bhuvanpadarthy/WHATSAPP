@@ -1,0 +1,1148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WhatsApp Cross-Platform Price Sync | Meta Facebook Business Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --wa-bg-deep: #0c1317;
+      --wa-panel-bg: #111b21;
+      --wa-card-bg: #182229;
+      --wa-card-header: #202c33;
+      --wa-border: #222d34;
+      --wa-green: #00a884;
+      --wa-green-hover: #029072;
+      --wa-green-dim: rgba(0, 168, 132, 0.15);
+      --wa-accent: #25d366;
+      --meta-blue: #0866ff;
+      --meta-blue-hover: #0756d6;
+      --meta-bg-dim: rgba(8, 102, 255, 0.12);
+      --wa-text-primary: #e9edef;
+      --wa-text-secondary: #8696a0;
+      --wa-text-muted: #667781;
+      --danger: #ef4444;
+      --warning: #f59e0b;
+      --amazon-color: #ff9900;
+      --flipkart-color: #2874f0;
+      --meesho-color: #f43397;
+      --myntra-color: #ff3f6c;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    body {
+      background-color: var(--wa-bg-deep);
+      color: var(--wa-text-primary);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Top Navigation */
+    header {
+      background-color: var(--wa-panel-bg);
+      border-bottom: 1px solid var(--wa-border);
+      padding: 14px 28px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-icon {
+      width: 40px;
+      height: 40px;
+      background: linear-gradient(135deg, #25D366, #128C7E);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      box-shadow: 0 4px 12px rgba(37, 211, 102, 0.3);
+    }
+
+    .brand-text h1 {
+      font-size: 17px;
+      font-weight: 700;
+      letter-spacing: -0.2px;
+    }
+
+    .brand-text p {
+      font-size: 12px;
+      color: var(--wa-text-secondary);
+    }
+
+    .header-badges {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .badge-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      border: 1px solid transparent;
+    }
+
+    .badge-meta-connected {
+      background: rgba(8, 102, 255, 0.15);
+      color: #70aaff;
+      border-color: rgba(8, 102, 255, 0.4);
+    }
+
+    .badge-meta-warning {
+      background: rgba(245, 158, 11, 0.15);
+      color: #fbbf24;
+      border-color: rgba(245, 158, 11, 0.4);
+    }
+
+    .badge-storage {
+      background: rgba(0, 168, 132, 0.12);
+      color: var(--wa-green);
+      border-color: rgba(0, 168, 132, 0.3);
+    }
+
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: currentColor;
+    }
+
+    /* Main Grid Layout */
+    .dashboard-layout {
+      display: grid;
+      grid-template-columns: 500px 1fr;
+      gap: 20px;
+      padding: 24px;
+      max-width: 1600px;
+      margin: 0 auto;
+      width: 100%;
+      flex: 1;
+    }
+
+    @media (max-width: 1080px) {
+      .dashboard-layout {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* Left Column */
+    .left-column {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    /* Right Column */
+    .right-column {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    /* Card Component */
+    .card {
+      background: var(--wa-card-bg);
+      border: 1px solid var(--wa-border);
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.25);
+    }
+
+    .card-header {
+      background: var(--wa-card-header);
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--wa-border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .card-header h2 {
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: 0.3px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .card-body {
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    /* Meta Banner */
+    .meta-intro-banner {
+      background: linear-gradient(135deg, rgba(8, 102, 255, 0.15), rgba(37, 211, 102, 0.1));
+      border: 1px solid rgba(8, 102, 255, 0.3);
+      border-radius: 8px;
+      padding: 12px 14px;
+      font-size: 12.5px;
+      line-height: 1.5;
+      color: #d1d7db;
+    }
+
+    /* Input Fields */
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .form-group label {
+      font-size: 12px;
+      color: var(--wa-text-secondary);
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .input-box {
+      width: 100%;
+      background: #111b21;
+      border: 1px solid var(--wa-border);
+      border-radius: 8px;
+      padding: 10px 14px;
+      color: var(--wa-text-primary);
+      font-size: 13px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .input-box:focus {
+      border-color: var(--meta-blue);
+    }
+
+    .input-help {
+      font-size: 11px;
+      color: var(--wa-text-muted);
+    }
+
+    /* Buttons */
+    .btn-row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      padding: 9px 16px;
+      border-radius: 8px;
+      font-size: 12.5px;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: all 0.2s ease;
+    }
+
+    .btn-meta {
+      background: var(--meta-blue);
+      color: #ffffff;
+    }
+
+    .btn-meta:hover {
+      background: var(--meta-blue-hover);
+    }
+
+    .btn-wa {
+      background: var(--wa-green);
+      color: #111b21;
+    }
+
+    .btn-wa:hover {
+      background: var(--wa-green-hover);
+    }
+
+    .btn-outline {
+      background: transparent;
+      border: 1px solid var(--wa-border);
+      color: var(--wa-text-primary);
+    }
+
+    .btn-outline:hover {
+      background: #202c33;
+    }
+
+    .btn-danger-outline {
+      background: transparent;
+      border: 1px solid rgba(239, 68, 68, 0.4);
+      color: var(--danger);
+    }
+
+    .btn-danger-outline:hover {
+      background: rgba(239, 68, 68, 0.15);
+    }
+
+    /* Storage Health Section */
+    .storage-stats-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+    }
+
+    .stat-box {
+      background: #111b21;
+      border: 1px solid var(--wa-border);
+      border-radius: 8px;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .stat-label {
+      font-size: 11px;
+      color: var(--wa-text-secondary);
+      font-weight: 500;
+    }
+
+    .stat-value {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--wa-text-primary);
+    }
+
+    .storage-banner {
+      background: rgba(0, 168, 132, 0.1);
+      border: 1px solid rgba(0, 168, 132, 0.25);
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 12px;
+      color: #5cf7c9;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    /* Toggle Switch */
+    .toggle-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 6px 0;
+    }
+
+    .toggle-info h4 {
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .toggle-info p {
+      font-size: 12px;
+      color: var(--wa-text-secondary);
+      margin-top: 2px;
+    }
+
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 48px;
+      height: 26px;
+      flex-shrink: 0;
+    }
+
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .slider {
+      position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
+      background-color: #3b4a54; transition: .25s; border-radius: 34px;
+    }
+    .slider:before {
+      position: absolute; content: ""; height: 18px; width: 18px; left: 4px; bottom: 4px;
+      background-color: white; transition: .25s; border-radius: 50%;
+    }
+    input:checked + .slider { background-color: var(--wa-green); }
+    input:checked + .slider:before { transform: translateX(22px); }
+
+    /* Preset Chips */
+    .chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 4px;
+    }
+    .chip {
+      background: #111b21;
+      border: 1px solid var(--wa-border);
+      border-radius: 16px;
+      padding: 5px 12px;
+      font-size: 11.5px;
+      color: var(--wa-text-secondary);
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .chip:hover {
+      background: #202c33;
+      color: var(--wa-text-primary);
+      border-color: #3b4a54;
+    }
+
+    /* Structured Comparison Card Preview */
+    .comparison-hero {
+      background: #111b21;
+      border: 1px solid var(--wa-border);
+      border-radius: 10px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .deal-winner-bar {
+      background: linear-gradient(135deg, rgba(37, 211, 102, 0.2), rgba(0, 168, 132, 0.08));
+      border: 1px solid var(--wa-green);
+      border-radius: 8px;
+      padding: 10px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 13px;
+    }
+
+    .platforms-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+    }
+
+    @media (max-width: 768px) {
+      .platforms-grid { grid-template-columns: 1fr; }
+    }
+
+    .platform-card {
+      background: #182229;
+      border: 1px solid var(--wa-border);
+      border-radius: 8px;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      position: relative;
+    }
+
+    .platform-card.winner {
+      border-color: var(--wa-green);
+    }
+
+    .platform-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .platform-name {
+      font-size: 13px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .price-row {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+      margin-top: 2px;
+    }
+
+    .price-main {
+      font-size: 16px;
+      font-weight: 700;
+      color: #5cf7c9;
+    }
+
+    .price-orig {
+      font-size: 12px;
+      text-decoration: line-through;
+      color: var(--wa-text-muted);
+    }
+
+    .discount-pill {
+      font-size: 10px;
+      font-weight: 700;
+      background: rgba(239, 68, 68, 0.2);
+      color: #f87171;
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+
+    .platform-rating {
+      font-size: 11.5px;
+      color: var(--wa-text-secondary);
+    }
+
+    .platform-highlight {
+      font-size: 11px;
+      color: var(--wa-text-primary);
+      background: #111b21;
+      padding: 4px 8px;
+      border-radius: 4px;
+      margin-top: 2px;
+    }
+
+    .platform-link-btn {
+      margin-top: 4px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      font-size: 11.5px;
+      font-weight: 600;
+      text-decoration: none;
+      padding: 6px 10px;
+      border-radius: 6px;
+      background: #202c33;
+      color: #53bdeb;
+      transition: background 0.15s;
+    }
+
+    .platform-link-btn:hover {
+      background: #2a3942;
+    }
+
+    /* Live Feed History Table */
+    .history-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+
+    .history-table th {
+      text-align: left;
+      padding: 10px 12px;
+      background: #111b21;
+      color: var(--wa-text-secondary);
+      font-weight: 600;
+      border-bottom: 1px solid var(--wa-border);
+    }
+
+    .history-table td {
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--wa-border);
+      color: var(--wa-text-primary);
+    }
+
+    .history-table tr:hover {
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    /* Toast Alert */
+    .alert-box {
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-size: 12px;
+      display: none;
+      line-height: 1.4;
+    }
+    .alert-success {
+      background: rgba(0, 168, 132, 0.2);
+      border: 1px solid var(--wa-green);
+      color: #5cf7c9;
+    }
+    .alert-error {
+      background: rgba(239, 68, 68, 0.2);
+      border: 1px solid var(--danger);
+      color: #fca5a5;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Navigation Header -->
+  <header>
+    <div class="brand">
+      <div class="brand-icon">🛍️</div>
+      <div class="brand-text">
+        <h1>WhatsApp Cross-Platform Price Sync</h1>
+        <p>Meta Facebook WhatsApp Business Cloud API & Storage Engine</p>
+      </div>
+    </div>
+
+    <div class="header-badges">
+      <div id="metaBadge" class="badge-status badge-meta-warning">
+        <span class="dot"></span>
+        <span id="metaBadgeText">Checking Meta...</span>
+      </div>
+      <div id="storageBadge" class="badge-status badge-storage">
+        <span>💾 Storage: <strong id="storageBadgeText">-- KB</strong></span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Grid Layout -->
+  <div class="dashboard-layout">
+    
+    <!-- LEFT COLUMN: Meta Facebook Config & Storage Optimization -->
+    <div class="left-column">
+      
+      <!-- CARD 1: Meta Facebook Developer WhatsApp Cloud API -->
+      <div class="card">
+        <div class="card-header">
+          <h2><span>🌐</span> Meta Facebook Developer Account Setup</h2>
+          <span style="font-size: 11px; background: rgba(8, 102, 255, 0.2); color: #70aaff; padding: 2px 8px; border-radius: 12px; font-weight: 600;">Official API</span>
+        </div>
+
+        <div class="card-body">
+          <div class="meta-intro-banner">
+            <strong>Direct Dispatch:</strong> Messages will be sent from your <strong>Meta Facebook Developer WhatsApp Business Account</strong> directly to your phone when products are searched online.
+          </div>
+
+          <div id="metaAlert" class="alert-box"></div>
+
+          <div class="form-group">
+            <label>
+              <span>WhatsApp Business Phone Number ID</span>
+              <a href="https://developers.facebook.com/apps/" target="_blank" style="color: #53bdeb; text-decoration: none; font-size: 11px;">Find in Meta App ↗</a>
+            </label>
+            <input type="text" id="metaPhoneIdInput" class="input-box" placeholder="e.g. 109876543210987">
+            <span class="input-help">Located under Meta App &gt; WhatsApp &gt; API Setup &gt; Phone number ID</span>
+          </div>
+
+          <div class="form-group">
+            <label>
+              <span>Meta Access Token (System User / Temporary)</span>
+            </label>
+            <input type="password" id="metaTokenInput" class="input-box" placeholder="EAABw...">
+            <span class="input-help">Permanent System User Token from Meta Business Settings (or 24h Test Token)</span>
+          </div>
+
+          <div class="form-group">
+            <label>
+              <span>Recipient / Business WhatsApp Number</span>
+            </label>
+            <input type="text" id="metaTargetPhoneInput" class="input-box" value="919876543210" placeholder="e.g. 919876543210">
+            <span class="input-help">Country code + phone without spaces/symbols. This is where comparisons arrive.</span>
+          </div>
+
+          <div class="btn-row">
+            <button class="btn btn-meta" id="saveMetaBtn" onclick="saveMetaConfig()">
+              <span>💾 Save Meta Credentials</span>
+            </button>
+            <button class="btn btn-outline" id="testMetaBtn" onclick="testMetaConnection()">
+              <span>⚡ Test Meta Connection</span>
+            </button>
+            <button class="btn btn-wa" id="sendTestMsgBtn" onclick="sendMetaTestMessage()">
+              <span>📲 Send Test WhatsApp</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- CARD 2: Ultra-Low Storage Monitor & Database Health -->
+      <div class="card">
+        <div class="card-header">
+          <h2><span>💾</span> Storage Footprint & Memory Diagnostics</h2>
+          <span id="storageHealthPill" style="font-size: 11px; background: rgba(0, 168, 132, 0.2); color: #5cf7c9; padding: 2px 8px; border-radius: 12px; font-weight: 600;">🟢 Ultra-Lightweight</span>
+        </div>
+
+        <div class="card-body">
+          <p style="font-size: 12px; color: var(--wa-text-secondary); line-height: 1.4;">
+            Every comparison message is optimized to take minimal disk space. Auto-pruning automatically keeps the database under a few kilobytes.
+          </p>
+
+          <div class="storage-stats-grid">
+            <div class="stat-box">
+              <span class="stat-label">Total Disk Size</span>
+              <span class="stat-value" id="statDiskSize">-- KB</span>
+            </div>
+            <div class="stat-box">
+              <span class="stat-label">Messages Stored</span>
+              <span class="stat-value" id="statMsgCount">0</span>
+            </div>
+            <div class="stat-box">
+              <span class="stat-label">Avg / Message</span>
+              <span class="stat-value" id="statAvgPerMsg">~180 B</span>
+            </div>
+          </div>
+
+          <div class="storage-banner">
+            <span>🛡️ <strong>Auto-Pruning:</strong> Retaining latest 50 records max.</span>
+            <span style="font-weight: 600;">WAL + Incremental Vacuum</span>
+          </div>
+
+          <div class="btn-row">
+            <button class="btn btn-outline" onclick="vacuumStorage()">
+              <span>🧹 Vacuum & Compact DB</span>
+            </button>
+            <button class="btn btn-danger-outline" onclick="clearStorageHistory()">
+              <span>🗑️ Clear History</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- CARD 3: User Settings & Allow-All Switch -->
+      <div class="card">
+        <div class="card-header">
+          <h2><span>⚙️</span> Extension Sync Permission</h2>
+        </div>
+
+        <div class="card-body">
+          <div class="toggle-row">
+            <div class="toggle-info">
+              <h4>"Allow All" Auto-Sync</h4>
+              <p>Automatically sync cross-platform prices when searching on Amazon, Flipkart, Meesho, Myntra</p>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="allowAllSwitch" checked onchange="toggleAllowAll()">
+              <span class="slider"></span>
+            </label>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- RIGHT COLUMN: Test Trigger & Structured 4-Platform Deal Viewer -->
+    <div class="right-column">
+      
+      <!-- CARD 4: Test Trigger Platform Search -->
+      <div class="card">
+        <div class="card-header">
+          <h2><span>🔍</span> Test Cross-Platform Search</h2>
+          <span style="font-size: 11px; color: var(--wa-text-secondary);">Simulate Online Shopping</span>
+        </div>
+
+        <div class="card-body">
+          <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 10px;">
+            <div class="form-group">
+              <label>Product Search Query</label>
+              <input type="text" id="queryInput" class="input-box" value="Ergonomic Office Chair" placeholder="e.g. Wireless Earbuds, Shoes">
+            </div>
+            <div class="form-group">
+              <label>Source Store</label>
+              <select id="sourceSelect" class="input-box" style="cursor: pointer;">
+                <option value="Amazon.in">Amazon.in</option>
+                <option value="Flipkart.com">Flipkart.com</option>
+                <option value="Meesho.com">Meesho.com</option>
+                <option value="Myntra.com">Myntra.com</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="chips">
+            <span class="chip" onclick="setPreset('Ergonomic Office Chair', 'Amazon.in')">🪑 Office Chair</span>
+            <span class="chip" onclick="setPreset('Wireless Earbuds ANC', 'Flipkart.com')">🎧 Earbuds</span>
+            <span class="chip" onclick="setPreset('Running Sneakers', 'Myntra.com')">👟 Sneakers</span>
+            <span class="chip" onclick="setPreset('Cotton Oversized T-Shirt', 'Meesho.com')">👕 T-Shirt</span>
+            <span class="chip" onclick="setPreset('Smart Watch AMOLED', 'Amazon.in')">⌚ Smart Watch</span>
+          </div>
+
+          <div class="btn-row" style="margin-top: 6px;">
+            <button class="btn btn-wa" id="triggerBtn" onclick="runTriggerSearch()" style="background: #25d366; color: #0c1317; font-weight: 700;">
+              <span>⚡ Trigger Cross-Platform Price Sync</span>
+            </button>
+            <a id="openWaDirectBtn" href="https://web.whatsapp.com" target="_blank" class="btn btn-outline" style="text-decoration: none;">
+              <span>📲 Open in Real WhatsApp ↗</span>
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <!-- CARD 5: Structured 4-Platform Comparison Model Viewer -->
+      <div class="card">
+        <div class="card-header">
+          <h2><span>📊</span> Structured Price Comparison Model (4 Platforms)</h2>
+          <span id="dealWinnerBadge" style="font-size: 11px; background: rgba(37, 211, 102, 0.2); color: #25D366; padding: 2px 8px; border-radius: 12px; font-weight: 700;">🏆 Best Deal Ready</span>
+        </div>
+
+        <div class="card-body">
+          <div class="deal-winner-bar">
+            <div>
+              <span style="font-weight: 700; font-size: 14px;" id="winnerSummaryText">Best Price on Meesho at ₹1,649</span>
+              <div style="font-size: 11.5px; opacity: 0.8; margin-top: 2px;" id="savingsText">Save up to ₹850 compared to other stores!</div>
+            </div>
+            <a id="winnerLinkBtn" href="#" target="_blank" class="btn btn-wa" style="padding: 6px 12px; font-size: 12px;">
+              <span>Open Deal ↗</span>
+            </a>
+          </div>
+
+          <div class="platforms-grid" id="platformsGrid">
+            <!-- Dynamically populated platform comparison cards -->
+          </div>
+        </div>
+      </div>
+
+      <!-- CARD 6: Dispatched Messages Feed -->
+      <div class="card">
+        <div class="card-header">
+          <h2><span>📨</span> Dispatched WhatsApp Log & Delivery Status</h2>
+          <button class="btn btn-outline" style="padding: 4px 10px; font-size: 11.5px;" onclick="fetchFullState()">
+            🔄 Refresh
+          </button>
+        </div>
+
+        <div class="card-body" style="padding: 0; overflow-x: auto;">
+          <table class="history-table">
+            <thead>
+              <tr>
+                <th>Time</th>
+                <th>Query</th>
+                <th>Source</th>
+                <th>Best Price</th>
+                <th>Delivery Status</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="historyTableBody">
+              <tr>
+                <td colspan="6" style="text-align: center; color: var(--wa-text-muted); padding: 16px;">Loading message logs...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+  <script>
+    let activeMetaConfig = null;
+    let latestComparisonData = null;
+
+    function setPreset(query, site) {
+      document.getElementById('queryInput').value = query;
+      document.getElementById('sourceSelect').value = site;
+    }
+
+    function showAlert(text, isError = false) {
+      const box = document.getElementById('metaAlert');
+      box.className = `alert-box ${isError ? 'alert-error' : 'alert-success'}`;
+      box.innerText = text;
+      box.style.display = 'block';
+      setTimeout(() => { box.style.display = 'none'; }, 6000);
+    }
+
+    // 1. Fetch State (Meta config, users, storage, messages)
+    async function fetchFullState() {
+      try {
+        const res = await fetch('/api/state');
+        if (!res.ok) return;
+        const data = await res.json();
+
+        // Update Meta status badge
+        const metaBadge = document.getElementById('metaBadge');
+        const metaBadgeText = document.getElementById('metaBadgeText');
+        if (data.meta_configured) {
+          metaBadge.className = 'badge-status badge-meta-connected';
+          metaBadgeText.innerText = 'Meta Business Connected';
+        } else {
+          metaBadge.className = 'badge-status badge-meta-warning';
+          metaBadgeText.innerText = 'Meta Setup Pending';
+        }
+
+        // Fill Meta inputs if not touched
+        if (data.meta_details) {
+          activeMetaConfig = data.meta_details;
+          if (data.meta_details.phone_number_id && !document.getElementById('metaPhoneIdInput').value) {
+            document.getElementById('metaPhoneIdInput').value = data.meta_details.phone_number_id;
+          }
+          if (data.meta_details.target_phone && document.getElementById('metaTargetPhoneInput').value === '919876543210') {
+            document.getElementById('metaTargetPhoneInput').value = data.meta_details.target_phone;
+          }
+        }
+
+        // Update Storage metrics
+        if (data.storage) {
+          document.getElementById('storageBadgeText').innerText = data.storage.db_size_formatted;
+          document.getElementById('statDiskSize').innerText = data.storage.db_size_formatted;
+          document.getElementById('statMsgCount').innerText = data.storage.message_count;
+          document.getElementById('statAvgPerMsg').innerText = data.storage.avg_bytes_per_message;
+          document.getElementById('storageHealthPill').innerText = data.storage.storage_status;
+        }
+
+        // Update Allow-all switch
+        if (data.users && data.users.length > 0) {
+          document.getElementById('allowAllSwitch').checked = data.users[0].allow_all;
+        }
+
+        // Render Message History Table
+        renderHistoryTable(data.messages || []);
+
+      } catch (err) {
+        console.error("State sync error:", err);
+      }
+    }
+
+    // 2. Save Meta Facebook Credentials
+    async function saveMetaConfig() {
+      const phoneId = document.getElementById('metaPhoneIdInput').value.trim();
+      const token = document.getElementById('metaTokenInput').value.trim();
+      const targetPhone = document.getElementById('metaTargetPhoneInput').value.trim();
+
+      if (!phoneId || !token) {
+        showAlert("Please enter both Meta Phone Number ID and Access Token.", true);
+        return;
+      }
+
+      const btn = document.getElementById('saveMetaBtn');
+      btn.disabled = true;
+      btn.innerText = "⏳ Saving...";
+
+      try {
+        const res = await fetch('/api/meta-config', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            phone_number_id: phoneId,
+            whatsapp_token: token,
+            target_phone: targetPhone
+          })
+        });
+        const data = await res.json();
+
+        if (res.ok && data.status === "success") {
+          showAlert("✅ Meta Facebook Account credentials saved and verified!");
+          fetchFullState();
+        } else {
+          showAlert(`⚠️ Error: ${data.detail || data.message || "Failed to save"}`, true);
+        }
+      } catch (err) {
+        showAlert(`Error saving: ${err.message}`, true);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = "<span>💾 Save Meta Credentials</span>";
+      }
+    }
+
+    // 3. Test Meta Connection
+    async function testMetaConnection() {
+      const btn = document.getElementById('testMetaBtn');
+      btn.disabled = true;
+      btn.innerText = "⏳ Testing...";
+
+      try {
+        const res = await fetch('/api/meta-test', { method: 'POST' });
+        const data = await res.json();
+
+        if (data.valid) {
+          showAlert(`✅ Meta Connection Verified! Business Name: "${data.verified_name}", Phone: ${data.display_phone_number}, Quality: ${data.quality_rating}`);
+        } else {
+          showAlert(`❌ Meta Verification Failed: ${data.error}`, true);
+        }
+      } catch (err) {
+        showAlert(`Failed to test: ${err.message}`, true);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = "<span>⚡ Test Meta Connection</span>";
+      }
+    }
+
+    // 4. Send Test WhatsApp via Meta
+    async function sendMetaTestMessage() {
+      const targetPhone = document.getElementById('metaTargetPhoneInput').value.trim();
+      const btn = document.getElementById('sendTestMsgBtn');
+      btn.disabled = true;
+      btn.innerText = "⏳ Sending...";
+
+      try {
+        const res = await fetch('/api/meta-send-test', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ phone: targetPhone })
+        });
+        const data = await res.json();
+
+        if (data.status === "sent") {
+          showAlert(`📲 Test WhatsApp successfully dispatched to +${targetPhone} via Meta Cloud API!`);
+        } else {
+          showAlert(`⚠️ Meta Dispatch: ${data.gateway_response?.error || data.status || "Check credentials"}`, true);
+        }
+        fetchFullState();
+      } catch (err) {
+        showAlert(`Send failed: ${err.message}`, true);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = "<span>📲 Send Test WhatsApp</span>";
+      }
+    }
+
+    // 5. Trigger Cross-Platform Search
+    async function runTriggerSearch() {
+      const query = document.getElementById('queryInput').value.trim();
+      const source = document.getElementById('sourceSelect').value;
+      const targetPhone = document.getElementById('metaTargetPhoneInput').value.trim();
+
+      if (!query) return;
+
+      const btn = document.getElementById('triggerBtn');
+      btn.disabled = true;
+      btn.innerText = "⏳ Comparing across 4 platforms...";
+
+      try {
+        const res = await fetch('/trigger-search', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            query: query,
+            current_site: source,
+            phone: targetPhone
+          })
+        });
+        const data = await res.json();
+
+        if (data.status === "success") {
+          renderComparisonView(data.comparison, data.summary);
+          if (data.whatsapp_web_url) {
+            document.getElementById('openWaDirectBtn').href = data.whatsapp_web_url;
+          }
+          showAlert(`✅ Comparison generated and dispatched! Delivery: ${data.delivery_status}`);
+          fetchFullState();
+        } else if (data.status === "deduplicated") {
+          showAlert(`ℹ️ Query '${query}' was already searched in the last 60 seconds (anti-spam cooldown).`, false);
+        } else {
+          showAlert(`⚠️ ${data.message || "Failed to trigger"}`, true);
+        }
+      } catch (err) {
+        showAlert(`Error: ${err.message}`, true);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = "<span>⚡ Trigger Cross-Platform Price Sync</span>";
+      }
+    }
+
+    // Render 4-Platform Cards
+    function renderComparisonView(platforms, summary) {
+      if (!platforms || !platforms.length) return;
+
+      if (summary) {
+        document.getElementById('winnerSummaryText').innerText = `🏆 Best Price on ${summary.winner_platform} at ${summary.lowest_price}`;
+        document.getElementById('savingsText').innerText = `Save up to ${summary.max_savings} compared to highest store!`;
+        const winnerItem = platforms.find(p => p.platform === summary.winner_platform) || platforms[0];
+        document.getElementById('winnerLinkBtn').href = winnerItem.url;
+      }
+
+      const grid = document.getElementById('platformsGrid');
+      grid.innerHTML = platforms.map(item => {
+        const isWinner = summary && item.platform === summary.winner_platform;
+        return `
+          <div class="platform-card ${isWinner ? 'winner' : ''}">
+            <div class="platform-top">
+              <span class="platform-name" style="color: ${item.badge_color};">
+                ● ${item.platform}
+              </span>
+              ${isWinner ? '<span style="background: rgba(37,211,102,0.2); color: #25d366; font-size: 10px; padding: 2px 6px; border-radius: 4px; font-weight: 700;">LOWEST PRICE</span>' : ''}
+            </div>
+            <div class="price-row">
+              <span class="price-main">${item.price}</span>
+              <span class="price-orig">${item.original_price}</span>
+              <span class="discount-pill">${item.discount}</span>
+            </div>
+            <div class="platform-rating">⭐ ${item.rating} ★ (${item.rating_count})</div>
+            <div class="platform-highlight">${item.highlight}</div>
+            <a href="${item.url}" target="_blank" rel="noopener noreferrer" class="platform-link-btn">
+              <span>View on ${item.platform} ↗</span>
+            </a>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // Render Message History Table
+    function renderHistoryTable(messages) {
+      const tbody = document.getElementById('historyTableBody');
+      if (!messages || messages.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--wa-text-muted); padding: 16px;">No messages sent yet. Trigger a search to start!</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = messages.map(m => {
+        const timeStr = m.created_at ? new Date(m.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--';
+        const waLink = `https://web.whatsapp.com/send?phone=${m.phone}&text=${encodeURIComponent(m.whatsapp_text || m.query)}`;
+        return `
+          <tr>
+            <td style="color: var(--wa-text-secondary);">${timeStr}</td>
+            <td><strong>${m.query}</strong></td>
+            <td><span style="background: #111b21; padding: 2px 6px; border-radius: 4px;">${m.source_site || 'Web'}</span></td>
+            <td style="color: #5cf7c9; font-weight: 600;">${m.lowest_price || '--'}</td>
+            <td><span style="font-size: 11px; opacity: 0.85;">${m.delivery_status || 'Logged'}</span></td>
+            <td>
+              <a href="${waLink}" target="_blank" style="color: #25D366; text-decoration: none; font-weight: 600; font-size: 11px;">
+                Open in WA ↗
+              </a>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    // Storage Actions
+    async function vacuumStorage() {
+      try {
+        const res = await fetch('/api/storage/vacuum', { method: 'POST' });
+        const data = await res.json();
+        showAlert(`🧹 Database vacuumed! Current size: ${data.db_size_formatted}`);
+        fetchFullState();
+      } catch (err) {
+        showAlert("Failed to vacuum DB", true);
+      }
+    }
+
+    async function clearStorageHistory() {
+      if (!confirm("Are you sure you want to clear message history? This will minimize storage to near zero.")) return;
+      try {
+        const res = await fetch('/api/storage/clear', { method: 'POST' });
+        const data = await res.json();
+        showAlert(`🗑️ Storage cleared! Database size: ${data.db_size_formatted}`);
+        fetchFullState();
+      } catch (err) {
+        showAlert("Failed to clear storage", true);
+      }
+    }
+
+    // Toggle Allow All
+    async function toggleAllowAll() {
+      const allowed = document.getElementById('allowAllSwitch').checked;
+      const targetPhone = document.getElementById('metaTargetPhoneInput').value.trim();
+      try {
+        await fetch('/api/settings', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ phone: targetPhone, allow_all: allowed })
+        });
+        showAlert(`Allow-All Auto-Sync is now ${allowed ? 'ENABLED' : 'PAUSED'}.`);
+      } catch (err) {
+        console.error("Toggle error:", err);
+      }
+    }
+
+    // Initial Load
+    fetchFullState();
+    // Default preview
+    runTriggerSearch();
+    // Poll every 3 seconds
+    setInterval(fetchFullState, 3000);
+  </script>
+</body>
+</html>
