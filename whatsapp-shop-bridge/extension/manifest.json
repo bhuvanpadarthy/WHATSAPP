@@ -10,6 +10,7 @@
   ],
   "host_permissions": [
     "*://*.amazon.in/*",
+    "*://*.amazon.com/*",
     "*://*.flipkart.com/*",
     "*://*.meesho.com/*",
     "*://*.myntra.com/*",
@@ -30,6 +31,7 @@
     {
       "matches": [
         "*://*.amazon.in/*",
+        "*://*.amazon.com/*",
         "*://*.flipkart.com/*",
         "*://*.meesho.com/*",
         "*://*.myntra.com/*"

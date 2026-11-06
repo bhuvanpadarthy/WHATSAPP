@@ -124,10 +124,27 @@ async def update_settings(payload: SettingsPayload):
         raise HTTPException(status_code=400, detail="Invalid phone number")
 
     user = db.upsert_user(clean_phone, payload.allow_all)
+
+    # Persist as the active target recipient phone in Meta config as well
+    meta_cfg = db.get_meta_config()
+    db.save_meta_config(
+        token=meta_cfg.get("whatsapp_token", ""),
+        phone_number_id=meta_cfg.get("phone_number_id", ""),
+        waba_id=meta_cfg.get("waba_id", ""),
+        target_phone=clean_phone
+    )
+
+    try:
+        if ENV_FILE.exists():
+            set_key(str(ENV_FILE), "TARGET_PHONE", clean_phone)
+    except Exception as e:
+        print(f"Warning: Could not update TARGET_PHONE in .env: {e}")
+
     return {
         "status": "success",
         "message": f"Allow All is {'enabled' if payload.allow_all else 'disabled'} for {clean_phone}",
-        "user": user
+        "user": user,
+        "target_phone": clean_phone
     }
 
 
@@ -278,10 +295,18 @@ async def trigger_search(payload: TriggerSearchPayload):
     """
     creds = get_active_meta_credentials()
 
-    # Determine destination phone (from payload, or user's target business phone)
-    clean_phone = "".join(filter(str.isdigit, payload.phone or "")) if payload.phone else ""
-    if not clean_phone:
-        clean_phone = creds["target_phone"] or "919876543210"
+    # Determine destination phone (prioritize configured target if payload is empty or dummy default)
+    clean_payload_phone = "".join(filter(str.isdigit, payload.phone or "")) if payload.phone else ""
+    configured_target = "".join(filter(str.isdigit, creds.get("target_phone", "") or ""))
+
+    if configured_target and (not clean_payload_phone or clean_payload_phone == "919876543210"):
+        clean_phone = configured_target
+    elif clean_payload_phone:
+        clean_phone = clean_payload_phone
+    elif configured_target:
+        clean_phone = configured_target
+    else:
+        clean_phone = "919876543210"
 
     clean_query = payload.query.strip()
     if not clean_query:

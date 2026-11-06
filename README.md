@@ -51,3 +51,4 @@ Open **`http://localhost:8000`** to configure your Meta Facebook WhatsApp Busine
 
 ### 3. Search Any Product
 Open **Amazon.in**, **Flipkart.com**, **Meesho.com**, or **Myntra.com** and search for any product (e.g., *"office chair"* or *"sneakers"*). Price and quality comparisons across all 4 platforms will be dispatched automatically to your WhatsApp!
+

@@ -1,8 +1,8 @@
 /**
  * WhatsApp Cross-Platform Price Sync Content Script
- * Injected into Amazon.in, Flipkart.com, Meesho.com, and Myntra.com.
+ * Injected into Amazon (.in, .com), Flipkart, Meesho, and Myntra.
  * Detects product search queries, checks 'Allow All' status,
- * triggers FastAPI backend, and shows a non-intrusive floating toast.
+ * triggers FastAPI backend, and shows an actionable WhatsApp sync toast.
  */
 
 (() => {
@@ -12,7 +12,7 @@
 
   function identifyCurrentSite() {
     const host = window.location.hostname.toLowerCase();
-    if (host.includes("amazon.in")) return "Amazon.in";
+    if (host.includes("amazon.")) return "Amazon";
     if (host.includes("flipkart.com")) return "Flipkart.com";
     if (host.includes("meesho.com")) return "Meesho.com";
     if (host.includes("myntra.com")) return "Myntra.com";
@@ -24,11 +24,11 @@
     const host = window.location.hostname.toLowerCase();
     let query = "";
 
-    // 1. Amazon India
-    if (host.includes("amazon.in")) {
+    // 1. Amazon (in, com)
+    if (host.includes("amazon.")) {
       query = url.searchParams.get("k") || url.searchParams.get("field-keywords") || "";
       if (!query) {
-        const input = document.querySelector("#twotabsearchtextbox");
+        const input = document.querySelector("#twotabsearchtextbox, input[name='field-keywords']");
         if (input && input.value) query = input.value;
       }
     }
@@ -36,7 +36,7 @@
     else if (host.includes("flipkart.com")) {
       query = url.searchParams.get("q") || "";
       if (!query) {
-        const input = document.querySelector("input[name='q']");
+        const input = document.querySelector("input[name='q'], input[title*='Search']");
         if (input && input.value) query = input.value;
       }
     }
@@ -44,7 +44,7 @@
     else if (host.includes("meesho.com")) {
       query = url.searchParams.get("q") || "";
       if (!query) {
-        const input = document.querySelector("input[placeholder*='Search']");
+        const input = document.querySelector("input[placeholder*='Search'], input[type='search']");
         if (input && input.value) query = input.value;
       }
     }
@@ -75,7 +75,8 @@
     if (typeof chrome !== "undefined" && chrome.storage && chrome.storage.local) {
       chrome.storage.local.get(["phone", "allow_all", "auto_open_whatsapp"], (data) => {
         const allowAll = data.allow_all !== false; // Default true
-        const phone = data.phone || "919876543210";
+        // If stored phone is dummy demo default, let backend use the active configured target phone
+        const phone = (data.phone && data.phone !== "919876543210") ? data.phone : "";
         const autoOpen = !!data.auto_open_whatsapp;
 
         if (!allowAll) {
@@ -87,9 +88,8 @@
         dispatchSearchToBackend(phone, query, autoOpen);
       });
     } else {
-      // Direct fallback if storage API not ready
       lastProcessedQuery = query;
-      dispatchSearchToBackend("919876543210", query, false);
+      dispatchSearchToBackend("", query, false);
     }
   }
 
@@ -97,7 +97,7 @@
     const currentSite = identifyCurrentSite();
 
     try {
-      console.log(`[PriceSync] Sending search '${query}' from ${currentSite} to backend...`);
+      console.log(`[PriceSync] Sending search '${query}' from ${currentSite} to backend (phone: ${phone || 'default'})...`);
       const res = await fetch(`${BACKEND_URL}/trigger-search`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -108,7 +108,11 @@
         })
       });
 
-      if (!res.ok) return;
+      if (!res.ok) {
+        console.warn("[PriceSync] Backend response not OK:", res.status);
+        lastProcessedQuery = ""; // Reset so user can retry
+        return;
+      }
       const data = await res.json();
 
       if (data.status === "success") {
@@ -119,10 +123,13 @@
           window.open(data.whatsapp_web_url, "_blank");
         }
       } else if (data.status === "deduplicated") {
-        console.log("[PriceSync] Query deduplicated:", data.message);
+        console.log("[PriceSync] Query deduplicated (60s cooldown):", data.message);
+      } else {
+        lastProcessedQuery = ""; // Reset so user can retry
       }
     } catch (err) {
       console.warn("[PriceSync] Backend is offline or unreachable at http://localhost:8000:", err.message);
+      lastProcessedQuery = ""; // Reset so user can retry
     }
   }
 
@@ -136,29 +143,37 @@
       .slice(0, 3)
       .join(", ");
 
-    const waWebUrl = data.whatsapp_web_url || `https://web.whatsapp.com/send?text=${encodeURIComponent(data.whatsapp_preview || query)}`;
-    const deliveryText = data.delivery_status || "Dispatched";
+    const targetPhone = data.phone || "your WhatsApp";
+    const waWebUrl = data.whatsapp_web_url || `https://web.whatsapp.com/send?phone=${targetPhone}&text=${encodeURIComponent(data.whatsapp_preview || query)}`;
+    const deliveryText = data.delivery_status || "Processed";
+    const isMetaDelivered = deliveryText.includes("Delivered via Meta");
+    const isMetaError = deliveryText.includes("Meta Error") || deliveryText.includes("Authentication Error");
+
     const winnerText = (data.summary && data.summary.winner_platform) 
       ? `🏆 Best Deal: ${data.summary.winner_platform} at ${data.summary.lowest_price}`
-      : `Comparison found across 4 platforms`;
+      : `Comparison generated across 4 platforms`;
 
     const toast = document.createElement("div");
     toast.id = "wa-price-sync-toast";
     toast.innerHTML = `
       <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 8px;">
-        <div style="display: flex; align-items: center; gap: 8px;">
-          <div style="background: #25D366; width: 30px; height: 30px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <div style="background: #25D366; width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; box-shadow: 0 2px 6px rgba(37,211,102,0.4);">
             📲
           </div>
           <div>
             <div style="font-weight: 700; font-size: 13px; color: #e9edef; display: flex; align-items: center; gap: 6px;">
-              <span>Meta WhatsApp Price Sync</span>
-              <span style="background: rgba(8, 102, 255, 0.25); color: #70aaff; font-size: 10px; padding: 1px 6px; border-radius: 10px; font-weight: 600;">Meta Cloud</span>
+              <span>WhatsApp Price Sync</span>
+              ${isMetaDelivered 
+                ? '<span style="background: rgba(37,211,102,0.25); color: #25D366; font-size: 10px; padding: 1px 6px; border-radius: 10px; font-weight: 600;">Sent via Meta</span>' 
+                : '<span style="background: rgba(245,158,11,0.25); color: #fbbf24; font-size: 10px; padding: 1px 6px; border-radius: 10px; font-weight: 600;">Action Ready</span>'}
             </div>
-            <div style="font-size: 12px; color: #8696a0; margin-top: 3px; line-height: 1.3;">
-              Sent <strong>"${query}"</strong> comparisons across <strong>${otherPlatforms}</strong> to WhatsApp!
-              <div style="font-size: 11px; color: #5cf7c9; margin-top: 3px; font-weight: 600;">${winnerText}</div>
-              <div style="font-size: 10.5px; opacity: 0.75; margin-top: 2px;">Status: ${deliveryText}</div>
+            <div style="font-size: 12px; color: #8696a0; margin-top: 3px; line-height: 1.35;">
+              Searched <strong>"${query}"</strong>. Compared across <strong>${otherPlatforms}</strong>!
+              <div style="font-size: 11.5px; color: #5cf7c9; margin-top: 3px; font-weight: 600;">${winnerText}</div>
+              <div style="font-size: 11px; margin-top: 3px; color: ${isMetaDelivered ? '#5cf7c9' : (isMetaError ? '#fca5a5' : '#93c5fd')};">
+                ${isMetaDelivered ? `✅ Dispatched to +${targetPhone}` : `Target: +${targetPhone} (${deliveryText})`}
+              </div>
             </div>
           </div>
         </div>
@@ -170,7 +185,7 @@
           Dashboard
         </a>
         <a id="wa-toast-view" href="${waWebUrl}" target="_blank" style="background: #25D366; color: #111b21; text-decoration: none; font-size: 11.5px; font-weight: 700; padding: 6px 14px; border-radius: 6px; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 2px 8px rgba(37, 211, 102, 0.3);">
-          <span>📲 Open in Real WhatsApp ↗</span>
+          <span>📲 Send to Friend on WhatsApp ↗</span>
         </a>
       </div>
     `;
@@ -180,12 +195,12 @@
       position: "fixed",
       bottom: "24px",
       right: "24px",
-      width: "360px",
+      width: "380px",
       backgroundColor: "#111b21",
-      border: "1px solid #00a884",
+      border: isMetaDelivered ? "1px solid #00a884" : "1px solid #f59e0b",
       borderRadius: "10px",
       padding: "14px",
-      boxShadow: "0 10px 30px rgba(0, 0, 0, 0.5), 0 0 15px rgba(0, 168, 132, 0.2)",
+      boxShadow: "0 10px 30px rgba(0, 0, 0, 0.6), 0 0 15px rgba(0, 168, 132, 0.2)",
       zIndex: "2147483647",
       fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
       color: "#e9edef",
@@ -209,10 +224,10 @@
       dismissToast(toast);
     };
 
-    // Auto dismiss after 7 seconds
+    // Auto dismiss after 8 seconds
     setTimeout(() => {
       dismissToast(toast);
-    }, 7000);
+    }, 8000);
   }
 
   function dismissToast(toastEl) {
@@ -224,7 +239,7 @@
     }, 350);
   }
 
-  // Debounced check function (2.5s timer)
+  // Debounced check function (2s timer)
   function handlePotentialSearch() {
     clearTimeout(debounceTimer);
     debounceTimer = setTimeout(() => {
@@ -232,19 +247,21 @@
       if (query && query !== lastProcessedQuery) {
         triggerPriceSync(query);
       }
-    }, 2500);
+    }, 2000);
   }
 
-  // Hook into search input changes
+  // Hook into search inputs and forms
   function attachInputListeners() {
-    const selectors = [
+    const inputSelectors = [
       "#twotabsearchtextbox", // Amazon
+      "input[name='field-keywords']",
       "input[name='q']",       // Flipkart
       "input[placeholder*='Search']", // Meesho / Generic
+      "input[type='search']",
       ".desktop-searchBar"    // Myntra
     ];
 
-    selectors.forEach(sel => {
+    inputSelectors.forEach(sel => {
       const inputs = document.querySelectorAll(sel);
       inputs.forEach(input => {
         if (!input.dataset.waHooked) {
@@ -256,6 +273,28 @@
               const val = input.value.trim();
               if (val) triggerPriceSync(val);
             }
+          });
+        }
+      });
+    });
+
+    // Also hook search forms and buttons
+    const formSelectors = [
+      "#nav-search-bar-form", // Amazon
+      "form[action*='/search']",
+      "form[action*='search']",
+      "header form"
+    ];
+
+    formSelectors.forEach(sel => {
+      const forms = document.querySelectorAll(sel);
+      forms.forEach(form => {
+        if (!form.dataset.waHooked) {
+          form.dataset.waHooked = "true";
+          form.addEventListener("submit", () => {
+            clearTimeout(debounceTimer);
+            const query = extractSearchQuery();
+            if (query) triggerPriceSync(query);
           });
         }
       });
@@ -282,20 +321,17 @@
     attachInputListeners();
     const initialQuery = extractSearchQuery();
     if (initialQuery) {
-      // Small delay on initial page load
-      setTimeout(() => triggerPriceSync(initialQuery), 1200);
+      setTimeout(() => triggerPriceSync(initialQuery), 1000);
     }
   });
 
-  // Also check immediately if already loaded
   if (document.readyState === "complete" || document.readyState === "interactive") {
     attachInputListeners();
     const query = extractSearchQuery();
     if (query) {
-      setTimeout(() => triggerPriceSync(query), 1200);
+      setTimeout(() => triggerPriceSync(query), 1000);
     }
   }
 
   console.log(`[PriceSync] Content script active on ${identifyCurrentSite()}`);
 })();
-

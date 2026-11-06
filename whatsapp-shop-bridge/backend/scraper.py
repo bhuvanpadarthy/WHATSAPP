@@ -254,11 +254,17 @@ async def test_meta_credentials(token: str, phone_number_id: str) -> Dict[str, A
                     "code_verification_status": data.get("code_verification_status", "VERIFIED")
                 }
             else:
+                err_code = data.get("error", {}).get("code", resp.status_code)
                 err_msg = data.get("error", {}).get("message", resp.text)
+                if err_code == 190 or "Session has expired" in str(err_msg) or "Authentication Error" in str(err_msg):
+                    friendly_error = "Meta Access Token has expired (Temporary tokens last 24 hours). Please copy a fresh token from Meta Developers > WhatsApp > API Setup."
+                else:
+                    friendly_error = err_msg
                 return {
                     "valid": False,
-                    "code": resp.status_code,
-                    "error": err_msg
+                    "code": err_code,
+                    "error": friendly_error,
+                    "raw_error": err_msg
                 }
     except Exception as e:
         return {"valid": False, "error": str(e)}
@@ -297,11 +303,24 @@ async def send_meta_whatsapp_message(phone: str, text: str, token: str, phone_nu
                     "response": res_json
                 }
             else:
+                err_code = res_json.get("error", {}).get("code", resp.status_code)
                 err_detail = res_json.get("error", {}).get("message", resp.text)
+                
+                # Human-friendly diagnostic guidance
+                if err_code == 190 or "Session has expired" in str(err_detail) or "Authentication Error" in str(err_detail):
+                    friendly_hint = "Meta Token Expired (Tokens last 24h). Please copy a fresh token from developers.facebook.com > WhatsApp > API Setup."
+                elif err_code == 131030:
+                    friendly_hint = f"Number +{clean_phone} is not in Meta Sandbox list. Add your friend's number in Meta > WhatsApp > API Setup > 'To' dropdown > 'Manage phone number list'."
+                elif err_code == 131047:
+                    friendly_hint = f"WhatsApp 24h Window Closed. Ask your friend to send 'Hi' to your Meta test number (+1 555-210-9398) once, or click 'Open in Real WhatsApp' to send directly."
+                else:
+                    friendly_hint = err_detail
+
                 return {
                     "status": "failed",
-                    "code": resp.status_code,
-                    "error": err_detail,
+                    "code": err_code,
+                    "error": friendly_hint,
+                    "raw_error": err_detail,
                     "response": res_json
                 }
     except Exception as e:

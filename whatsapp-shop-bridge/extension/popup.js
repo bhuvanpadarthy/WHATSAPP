@@ -3,6 +3,7 @@ const BACKEND_URL = "http://localhost:8000";
 document.addEventListener("DOMContentLoaded", async () => {
   const phoneInput = document.getElementById("phoneInput");
   const allowAllToggle = document.getElementById("allowAllToggle");
+  const autoOpenToggle = document.getElementById("autoOpenToggle");
   const saveBtn = document.getElementById("saveBtn");
   const openRealWaBtn = document.getElementById("openRealWaBtn");
   const openMetaConfigBtn = document.getElementById("openMetaConfigBtn");
@@ -13,12 +14,15 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   // 1. Load saved settings from Chrome local storage
   if (typeof chrome !== "undefined" && chrome.storage && chrome.storage.local) {
-    chrome.storage.local.get(["phone", "allow_all"], (data) => {
+    chrome.storage.local.get(["phone", "allow_all", "auto_open_whatsapp"], (data) => {
       if (data.phone) {
         phoneInput.value = data.phone;
       }
       if (typeof data.allow_all === "boolean") {
         allowAllToggle.checked = data.allow_all;
+      }
+      if (typeof data.auto_open_whatsapp === "boolean") {
+        if (autoOpenToggle) autoOpenToggle.checked = data.auto_open_whatsapp;
       }
     });
   }
@@ -40,8 +44,13 @@ document.addEventListener("DOMContentLoaded", async () => {
           metaStatusText.innerHTML = '<span style="color: #f59e0b;">○ Setup Needed</span>';
         }
 
-        if (data.meta_details && data.meta_details.target_phone && !phoneInput.value) {
-          phoneInput.value = data.meta_details.target_phone;
+        // If backend has a configured target phone, sync it into popup
+        const activeTarget = data.meta_details?.target_phone;
+        if (activeTarget && (phoneInput.value === "919876543210" || !phoneInput.value)) {
+          phoneInput.value = activeTarget;
+          if (typeof chrome !== "undefined" && chrome.storage && chrome.storage.local) {
+            chrome.storage.local.set({ phone: activeTarget });
+          }
         }
       } else {
         throw new Error("Bad status");
@@ -57,10 +66,11 @@ document.addEventListener("DOMContentLoaded", async () => {
   async function saveSettings() {
     const phone = phoneInput.value.trim() || "919876543210";
     const allow_all = allowAllToggle.checked;
+    const auto_open_whatsapp = autoOpenToggle ? autoOpenToggle.checked : false;
 
     // Save locally in Chrome Storage
     if (typeof chrome !== "undefined" && chrome.storage && chrome.storage.local) {
-      chrome.storage.local.set({ phone, allow_all });
+      chrome.storage.local.set({ phone, allow_all, auto_open_whatsapp });
     }
 
     // Sync with FastAPI backend
@@ -98,6 +108,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   // Event Listeners
   saveBtn.addEventListener("click", saveSettings);
   allowAllToggle.addEventListener("change", saveSettings);
+  if (autoOpenToggle) autoOpenToggle.addEventListener("change", saveSettings);
 
   // Open Real WhatsApp button
   openRealWaBtn.addEventListener("click", () => {
